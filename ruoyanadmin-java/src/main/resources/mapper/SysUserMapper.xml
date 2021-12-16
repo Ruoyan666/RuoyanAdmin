@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyan.mapper.SysUserMapper">
+
+    <select id="getNavMenuIds" resultType="java.lang.Long">
+        select distinct srm.menu_id from sys_user_role sur left join sys_role_menu srm
+        on sur.role_id = srm.role_id where sur.user_id = #{userId};
+    </select>
+
+    <select id="listByMenuId" resultType="com.ruoyan.entity.SysUser">
+        select distinct su.id,su.username, su.password, su.avatar,
+                        su.email, su.city, su.created, su.updated ,su.last_login,
+                        su.statu
+        from sys_user_role sur
+        left join sys_role_menu srm on sur.role_id = srm.role_id
+        left join sys_user su on sur.user_id = su.id
+        where srm.menu_id = #{menuId};
+    </select>
+</mapper>

@@ -1,0 +1,13 @@
+{
+  "properties": [
+    {
+      "name": "ruoyan.jwt.expire",
+      "type": "java.lang.String",
+      "description": "Description for ruoyan.jwt.expire."
+    },
+    {
+      "name": "ruoyan.jwt.secret",
+      "type": "java.lang.String",
+      "description": "Description for ruoyan.jwt.secret."
+    }
+  ] }
