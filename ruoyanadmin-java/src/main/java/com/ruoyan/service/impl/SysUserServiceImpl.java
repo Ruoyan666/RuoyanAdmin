@@ -49,6 +49,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
 
+    /**
+     * 根据指定用户Id获取用户所有权限信息，并添加到字符串
+     * 返回权限字符串
+     *
+     * @param userId
+     * @return String
+     */
     @Override
     public String getUserAuthorityInfo(Long userId)
     {
@@ -97,6 +104,11 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         return authority;
     }
 
+    /**
+     * 根据用户名清除redis中用户权限信息
+     *
+     * @param username
+     */
     @Override
     public void clearUserAuthorityInfo(String username)
     {
