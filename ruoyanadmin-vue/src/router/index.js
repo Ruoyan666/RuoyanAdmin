@@ -71,11 +71,6 @@ router.beforeEach((to,from,next) =>{
 
   let token = localStorage.getItem("token");
 
-  if (!token)
-  {
-    token = sessionStorage.getItem("token");
-  }
-
   if (to.path == '/login')
   {
     next();
