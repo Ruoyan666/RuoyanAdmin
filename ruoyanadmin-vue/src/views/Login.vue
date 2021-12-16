@@ -21,7 +21,7 @@
           <el-input v-model="loginForm.password" type="password"></el-input>
         </el-form-item>
         <el-form-item>
-          <el-checkbox v-model="checked" style="float: left;margin-top: -15px;margin-bottom: -22px">记住我</el-checkbox>
+          <el-checkbox v-model="checked" style="float: left;margin-top: -15px;margin-bottom: -22px;">记住我</el-checkbox>
         </el-form-item>
         <el-form-item label="验证码" prop="code" style="width: 380px" @keyup.enter.native="submitForm('loginForm')">
           <el-input v-model="loginForm.code" style="width: 152px;float: left"></el-input>
@@ -51,7 +51,6 @@ export default {
         password: '',
         code: '',
         token: '',
-        checked: false,
       },
       //输入框验证规则
       rules: {
@@ -67,7 +66,8 @@ export default {
         ],
       },
       //验证码初始数据为null
-      captchaImage: null
+      captchaImage: null,
+      checked: false
     }
   },
   methods: {
@@ -77,11 +77,26 @@ export default {
         if (valid) {
           this.$axios.post('/login?' + qs.stringify(this.loginForm)).then(response =>{
 
-              const jwt = response.headers['authorization'];
+              const token = response.headers['authorization'];
 
-              this.$store.commit('SET_TOKEN',jwt);
+              //若当前用户勾选了记住我，则将token存入到localStorage中;
+              //若未勾选记住我，则存入到sessionStorage中
+              if (this.checked === true)
+              {
+                this.$store.commit("SET_TOKEN",token);
+              }
+              else
+              {
+                this.$store.commit('SET_TEMP_TOKEN',token);
+              }
+
+
+            // this.$store.commit("SET_TOKEN",token);
+            // this.$store.commit('SET_TEMP_TOKEN',token);
+
 
               this.$router.push("/index");
+
 
           }).catch(error =>{
             this.getCaptchaImage();
