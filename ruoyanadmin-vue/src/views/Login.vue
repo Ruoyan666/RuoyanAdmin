@@ -2,7 +2,7 @@
 
   <el-row type="flex" class="row-bg" justify="center">
     <el-col :xl="6" :lg="7">
-      <h2>欢迎来到VueAdmin管理系统</h2>
+      <h2>欢迎来到RuoyanAdmin管理系统</h2>
       <el-image :src="require('@/assets/ruoyan.jpg')" style="height: 180px; width: 220px"></el-image>
 
       <p>学习开发 若言Ruoyan</p>
