@@ -139,23 +139,11 @@ public class SysMenuController extends BaseController
     @ApiOperation(value = "根据指定菜单Id删除菜单项接口")
     @PreAuthorize("hasAuthority('sys:menu:delete')")
     @PostMapping("/delete/{id}")
-    @Transactional
     public Result delete(@ApiParam(value = "菜单Id") @PathVariable(name = "id") Long menuId)
     {
-        int count = sysMenuService.count(new QueryWrapper<SysMenu>().eq("parent_id", menuId));
-        if(count > 0)
-        {
-            return Result.fail("当前菜单项下还存在有子菜单项，无法删除");
-        }
+        Result result = sysMenuService.deteleByTransactional(menuId);
 
-        //清除redis中与该菜单所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByMenuId(menuId);
-
-        sysMenuService.removeById(menuId);
-        //同步删除中间关联表信息
-        sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().eq("menu_id", menuId));
-
-        return Result.success("操作成功");
+        return result;
     }
 
 }
