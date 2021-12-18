@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,12 +127,75 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result update(SysMenu sysMenu)
+    public Result saveByTransactional(SysMenu sysMenu)
     {
         sysMenuMapper.updateById(sysMenu);
 
         return Result.success(sysMenu);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result updateByTransactional(SysMenu sysMenu, List<SysMenu> sysMenuList)
+    {
+        sysMenu.setUpdated(LocalDateTime.now());
+        sysMenuMapper.updateById(sysMenu);
 
+        //级联更新菜单状态，因为是三级结构，因此需要遍历比较查询出更新的菜单项是否为顶级菜单
+        //若为顶级菜单，则直接更新顶级菜单和顶级菜单下的所有子菜单项状态即可
+        //若不为顶级菜单，则先找出属于该菜单下的所有子菜单项，最后更新该菜单和菜单下所有子菜单项状态
+        if(sysMenu.getParentId() == 0L)
+        {
+            updateMenuChildrenStatus(sysMenuList, sysMenu);
+        }
+        else
+        {
+            //遍历整个树结构，找到当前菜单项结点
+            for (SysMenu menu : sysMenuList)
+            {
+                for (SysMenu child : menu.getChildren())
+                {
+                    //若当前菜单项存在子菜单项，则更新子菜单项状态
+                    if(child.getId().equals(sysMenu.getId()))
+                    {
+                        updateMenuChildrenStatus(menu.getChildren(), sysMenu);
+                    }
+                }
+            }
+
+        }
+
+        sysUserService.clearUserAuthorityInfoByMenuId(sysMenu.getId());
+
+        return Result.success(sysMenu);
+    }
+
+
+    /**
+     * 该方法为更新某菜单项下所有子菜单项状态信息
+     * 第一个参数为子菜单项列表
+     * 第二个参数为子菜单项列表的父菜单项
+     *
+     * @param sysMenuList
+     * @param sysMenu
+     */
+    @Override
+    public void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu)
+    {
+        for (SysMenu menu : sysMenuList)
+        {
+            if(menu.getId().equals(sysMenu.getId()) && menu.getChildren().size() > 0)
+            {
+                for (SysMenu child : menu.getChildren())
+                {
+                    child.setUpdated(LocalDateTime.now());
+                    child.setStatu(sysMenu.getStatu());
+                    sysMenuMapper.updateById(child);
+
+                    updateMenuChildrenStatus(menu.getChildren(), child);
+                }
+            }
+        }
+
+    }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyan.commom.dto.SysMenuDto;
 import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysMenu;
+import com.ruoyan.mapper.SysMenuMapper;
 
 import java.util.List;
 
@@ -23,10 +24,14 @@ public interface SysMenuService extends IService<SysMenu>
     List<SysMenu> buildMenuTree(List<SysMenu> sysMenuList);
 
     /**
-     * 对菜单项进行更新（利用事务)
+     * 对菜单项进行更新保存（利用事务)
      *
      * @param sysMenu
      * @return Result
      */
-    Result update(SysMenu sysMenu);
+    Result saveByTransactional(SysMenu sysMenu);
+
+    Result updateByTransactional(SysMenu sysMenu, List<SysMenu> sysMenuList);
+
+    void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu);
 }
