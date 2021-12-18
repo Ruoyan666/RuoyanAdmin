@@ -174,6 +174,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Result deteleByTransactional(Long menuId)
     {
         int count = this.count(new QueryWrapper<SysMenu>().eq("parent_id", menuId));
