@@ -9,6 +9,7 @@ import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysRole;
 import com.ruoyan.entity.SysUser;
 import com.ruoyan.entity.SysUserRole;
+import com.ruoyan.mapper.SysUserRoleMapper;
 import com.ruoyan.security.JwtLogoutSuccessHandler;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -209,20 +210,22 @@ public class SysUserController extends BaseController
     @ApiOperation(value = "更新用户角色信息接口")
     @PreAuthorize("hasAuthority('sys:user:role')")
     @PostMapping("/role/{userId}")
-    @Transactional
     public Result rolePerm(@ApiParam(value = "用户Id") @PathVariable("userId") Long userId, @ApiParam(value = "与当前用户相关联的角色Id数组") @RequestBody Long[] roleIds)
     {
-        for (Long roleId : roleIds)
+        List<SysUserRole> userRoleList = sysUserRoleService.getUserRoleInfoByUserId(userId);
+
+        for (SysUserRole sysUserRole : userRoleList)
         {
-            SysRole sysRole = sysRoleService.getById(roleId);
+            SysRole sysRole = sysRoleService.getById(sysUserRole.getRoleId());
 
             if("admin".equals(sysRole.getCode()))
             {
                 String functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
 
-                return sysRoleService.superAdminCheck(this.className, functionName);
+                return sysRoleService.superAdminCheck(className, functionName);
             }
         }
+
 
         //List用于存储用户关联的角色数组信息
         List<SysUserRole> sysUserRoleList = new ArrayList<>();
