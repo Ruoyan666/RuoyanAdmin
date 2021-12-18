@@ -118,7 +118,6 @@ public class SysMenuController extends BaseController
     @ApiOperation(value = "更新菜单项信息接口")
     @PreAuthorize("hasAuthority('sys:menu:update')")
     @PostMapping("/update")
-    @Transactional(rollbackFor = Exception.class)
     public Result update(@ApiParam(value = "被更新实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
         //所有菜单项的树结构列表
