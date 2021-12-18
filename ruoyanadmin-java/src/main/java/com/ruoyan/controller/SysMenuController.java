@@ -106,7 +106,7 @@ public class SysMenuController extends BaseController
     @PostMapping("/save")
     public Result save(@ApiParam(value = "需新增实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
-        return sysMenuService.update(sysMenu);
+        return sysMenuService.saveByTransactional(sysMenu);
     }
 
     /**
@@ -124,68 +124,12 @@ public class SysMenuController extends BaseController
         //所有菜单项的树结构列表
         List<SysMenu> sysMenuList = sysMenuService.treeList();
 
-        sysMenu.setUpdated(LocalDateTime.now());
-        sysMenuService.updateById(sysMenu);
+        Result result = sysMenuService.updateByTransactional(sysMenu, sysMenuList);
 
-
-        //级联更新菜单状态，因为是三级结构，因此需要遍历比较查询出更新的菜单项是否为顶级菜单
-        //若为顶级菜单，则直接更新顶级菜单和顶级菜单下的所有子菜单项状态即可
-        //若不为顶级菜单，则先找出属于该菜单下的所有子菜单项，最后更新该菜单和菜单下所有子菜单项状态
-        if(sysMenu.getParentId() == 0L)
-        {
-            updateMenuChildrenStatus(sysMenuList, sysMenu);
-        }
-        else
-        {
-            //遍历整个树结构，找到当前菜单项结点
-            for (SysMenu menu : sysMenuList)
-            {
-                for (SysMenu child : menu.getChildren())
-                {
-                    //若当前菜单项存在子菜单项，则更新子菜单项状态
-                    if(child.getId().equals(sysMenu.getId()))
-                    {
-                        updateMenuChildrenStatus(menu.getChildren(), sysMenu);
-                    }
-                }
-            }
-
-        }
-
-
-        //清除redis中与该菜单所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByMenuId(sysMenu.getId());
-
-        return Result.success(sysMenu);
+        return result;
     }
 
 
-    /**
-     * 该方法为更新某菜单项下所有子菜单项状态信息
-     * 第一个参数为子菜单项列表
-     * 第二个参数为子菜单项列表的父菜单项
-     *
-     * @param sysMenuList
-     * @param sysMenu
-     */
-    public void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu)
-    {
-        for (SysMenu menu : sysMenuList)
-        {
-            if(menu.getId().equals(sysMenu.getId()) && menu.getChildren().size() > 0)
-            {
-                for (SysMenu child : menu.getChildren())
-                {
-                    child.setUpdated(LocalDateTime.now());
-                    child.setStatu(sysMenu.getStatu());
-                    sysMenuService.updateById(child);
-
-                    updateMenuChildrenStatus(menu.getChildren(), child);
-                }
-            }
-        }
-
-    }
 
     /**
      * 根据指定菜单Id删除菜单项
