@@ -139,7 +139,7 @@ public class SysMenuController extends BaseController
     @PostMapping("/delete/{id}")
     public Result delete(@ApiParam(value = "菜单Id") @PathVariable(name = "id") Long menuId)
     {
-        Result result = sysMenuService.deteleByTransactional(menuId);
+        Result result = sysMenuService.deleteByTransactional(menuId);
 
         return result;
     }
