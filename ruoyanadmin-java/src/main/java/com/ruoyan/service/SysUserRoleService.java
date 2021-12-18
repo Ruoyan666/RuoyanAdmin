@@ -3,6 +3,8 @@ package com.ruoyan.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyan.entity.SysUserRole;
 
+import java.util.List;
+
 /**
  * @Package: com.ruoyan.service
  * @ClassName: SysUserRoleService
@@ -12,4 +14,11 @@ import com.ruoyan.entity.SysUserRole;
  */
 public interface SysUserRoleService extends IService<SysUserRole>
 {
+    /**
+     * 根据用户Id查出用户关联的角色Id信息
+     *
+     * @param userId
+     * @return List<SySUserRole>
+     */
+    List<SysUserRole> getUserRoleInfoByUserId(Long userId);
 }
