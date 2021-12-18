@@ -263,6 +263,8 @@ export default {
             this.getMenuTree();
           }
         });
+      }).catch(error => {
+          this.getMenuTree();
       })
     }
   }
