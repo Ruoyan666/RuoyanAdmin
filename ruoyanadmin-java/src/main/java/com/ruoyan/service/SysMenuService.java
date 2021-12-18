@@ -33,7 +33,7 @@ public interface SysMenuService extends IService<SysMenu>
 
     Result updateByTransactional(SysMenu sysMenu, List<SysMenu> sysMenuList);
 
-    Result deteleByTransactional(Long menuId);
+    Result deleteByTransactional(Long menuId);
 
     void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu);
 

@@ -131,7 +131,8 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
     @Transactional(rollbackFor = Exception.class)
     public Result saveByTransactional(SysMenu sysMenu)
     {
-        this.updateById(sysMenu);
+        sysMenu.setCreated(LocalDateTime.now());
+        this.save(sysMenu);
 
         return Result.success(sysMenu);
     }
@@ -140,6 +141,11 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
     @Transactional(rollbackFor = Exception.class)
     public Result updateByTransactional(SysMenu sysMenu, List<SysMenu> sysMenuList)
     {
+        if(sysMenu == null)
+        {
+            return Result.fail("未发现该菜单项，可能已被删除");
+        }
+
         sysMenu.setUpdated(LocalDateTime.now());
         this.updateById(sysMenu);
 
@@ -175,8 +181,13 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result deteleByTransactional(Long menuId)
+    public Result deleteByTransactional(Long menuId)
     {
+        if(this.getById(menuId) == null)
+        {
+            return Result.fail("未发现该菜单项,可能已被其它管理员删除");
+        }
+
         int count = this.count(new QueryWrapper<SysMenu>().eq("parent_id", menuId));
         if(count > 0)
         {
@@ -189,7 +200,9 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
         //同步删除中间关联表信息
         sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().eq("menu_id", menuId));
 
-        return null;
+        this.removeById(menuId);
+
+        return Result.success("OK");
     }
 
 
