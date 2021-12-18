@@ -6,10 +6,12 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyan.commom.dto.SysMenuDto;
 import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysMenu;
+import com.ruoyan.entity.SysRoleMenu;
 import com.ruoyan.entity.SysUser;
 import com.ruoyan.mapper.SysMenuMapper;
 import com.ruoyan.mapper.SysUserMapper;
 import com.ruoyan.service.SysMenuService;
+import com.ruoyan.service.SysRoleMenuService;
 import com.ruoyan.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,14 +32,15 @@ import java.util.List;
 @Service
 public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> implements SysMenuService
 {
-    @Autowired
-    SysMenuMapper sysMenuMapper;
 
     @Autowired
     SysUserService sysUserService;
 
     @Autowired
     SysUserMapper sysUserMapper;
+
+    @Autowired
+    SysRoleMenuService sysRoleMenuService;
 
     @Override
     public List<SysMenuDto> getCurrentUserNav()
@@ -108,7 +111,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
             for (SysMenu menu : sysMenuList)
             {
                 //当内循环当前结点的父结点Id等于外层循环结点Id，说明此时为子结点
-                if(menu.getParentId() == sysMenu.getId())
+                if(menu.getParentId().equals(sysMenu.getId()))
                 {
                     sysMenu.getChildren().add(menu);
                 }
@@ -121,7 +124,6 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
             }
         }
 
-
         return menuTree;
     }
 
@@ -129,7 +131,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
     @Transactional(rollbackFor = Exception.class)
     public Result saveByTransactional(SysMenu sysMenu)
     {
-        sysMenuMapper.updateById(sysMenu);
+        this.updateById(sysMenu);
 
         return Result.success(sysMenu);
     }
@@ -139,7 +141,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
     public Result updateByTransactional(SysMenu sysMenu, List<SysMenu> sysMenuList)
     {
         sysMenu.setUpdated(LocalDateTime.now());
-        sysMenuMapper.updateById(sysMenu);
+        this.updateById(sysMenu);
 
         //级联更新菜单状态，因为是三级结构，因此需要遍历比较查询出更新的菜单项是否为顶级菜单
         //若为顶级菜单，则直接更新顶级菜单和顶级菜单下的所有子菜单项状态即可
@@ -165,9 +167,28 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
 
         }
 
+        //清除redis中关于菜单项的所有数据缓存
         sysUserService.clearUserAuthorityInfoByMenuId(sysMenu.getId());
 
         return Result.success(sysMenu);
+    }
+
+    @Override
+    public Result deteleByTransactional(Long menuId)
+    {
+        int count = this.count(new QueryWrapper<SysMenu>().eq("parent_id", menuId));
+        if(count > 0)
+        {
+            return Result.fail("当前菜单项下还存在有子菜单项，无法删除");
+        }
+
+        //清除redis中与该菜单所有相关的权限缓存
+        sysUserService.clearUserAuthorityInfoByMenuId(menuId);
+
+        //同步删除中间关联表信息
+        sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().eq("menu_id", menuId));
+
+        return null;
     }
 
 
@@ -190,7 +211,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
                 {
                     child.setUpdated(LocalDateTime.now());
                     child.setStatu(sysMenu.getStatu());
-                    sysMenuMapper.updateById(child);
+                    this.updateById(child);
 
                     updateMenuChildrenStatus(menu.getChildren(), child);
                 }
