@@ -4,6 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ruoyan.commom.dto.SysMenuDto;
+import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysMenu;
 import com.ruoyan.entity.SysUser;
 import com.ruoyan.mapper.SysMenuMapper;
@@ -13,6 +14,7 @@ import com.ruoyan.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -121,4 +123,15 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
 
         return menuTree;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result update(SysMenu sysMenu)
+    {
+        sysMenuMapper.updateById(sysMenu);
+
+        return Result.success(sysMenu);
+    }
+
+
 }
