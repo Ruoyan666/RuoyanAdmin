@@ -106,11 +106,7 @@ public class SysMenuController extends BaseController
     @PostMapping("/save")
     public Result save(@ApiParam(value = "需新增实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
-        sysMenu.setCreated(LocalDateTime.now());
-
-        sysMenuService.save(sysMenu);
-
-        return Result.success(sysMenu);
+        return sysMenuService.update(sysMenu);
     }
 
     /**
@@ -122,7 +118,7 @@ public class SysMenuController extends BaseController
     @ApiOperation(value = "更新菜单项信息接口")
     @PreAuthorize("hasAuthority('sys:menu:update')")
     @PostMapping("/update")
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public Result update(@ApiParam(value = "被更新实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
         //所有菜单项的树结构列表
@@ -131,7 +127,6 @@ public class SysMenuController extends BaseController
         sysMenu.setUpdated(LocalDateTime.now());
         sysMenuService.updateById(sysMenu);
 
-        long start = System.currentTimeMillis();
 
         //级联更新菜单状态，因为是三级结构，因此需要遍历比较查询出更新的菜单项是否为顶级菜单
         //若为顶级菜单，则直接更新顶级菜单和顶级菜单下的所有子菜单项状态即可
@@ -157,9 +152,6 @@ public class SysMenuController extends BaseController
 
         }
 
-        long end = System.currentTimeMillis();
-
-        System.out.println("业务代码运行时间:" + (end - start) + "ms");
 
         //清除redis中与该菜单所有相关的权限缓存
         sysUserService.clearUserAuthorityInfoByMenuId(sysMenu.getId());
