@@ -11,7 +11,7 @@ import java.util.List;
  * @ClassName: SysMenuDto
  * @Author: ruoyan1998
  * @CreateTime: 2021/11/29 16:59
- * @Description:
+ * @Description: 角色项实体类Dto
  */
 @Data
 public class SysMenuDto implements Serializable

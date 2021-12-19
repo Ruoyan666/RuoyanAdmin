@@ -10,7 +10,7 @@ import java.io.Serializable;
  * @ClassName: PasswordDto
  * @Author: ruoyan1998
  * @CreateTime: 2021/12/3 9:29
- * @Description:
+ * @Description: 密码Dto类
  */
 @Data
 public class PasswordDto implements Serializable

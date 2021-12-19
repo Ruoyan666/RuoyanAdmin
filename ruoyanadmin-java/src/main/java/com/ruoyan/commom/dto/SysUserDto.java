@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * @ClassName: SysUserDto
  * @Author: ruoyan1998
  * @CreateTime: 2021/11/30 9:41
- * @Description:
+ * @Description: 用户项实体类Dto
  */
 @Data
 public class SysUserDto implements Serializable
