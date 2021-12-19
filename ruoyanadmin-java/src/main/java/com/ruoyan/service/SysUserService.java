@@ -52,15 +52,57 @@ public interface SysUserService extends IService<SysUser>
      */
     void clearUserAuthorityInfoByMenuId(Long menuId);
 
+    /**
+     * 通过当前用户获取用户Dto信息
+     *
+     * @param sysUser
+     * @return SysUserDto
+     */
     SysUserDto getUserInfo(SysUser sysUser);
 
+    /**
+     * 利用事务对用户进行新增操作
+     *
+     * @param sysUser
+     * @return Result
+     */
     Result saveUser(SysUser sysUser);
 
+    /**
+     * 利用事务对用户进行删除操作（可批量删除）
+     *
+     * @param userIds
+     * @return Result
+     */
     Result deleteByTransactional(Long[] userIds);
 
+    /**
+     * 更新用户下的角色权限信息
+     * 第一个参数为当前用户的Id
+     * 第二个参数为当前用户相关联的角色Id数组
+     *
+     * @param userId
+     * @param roleIds
+     * @return Result
+     */
     Result updatePermissions(Long userId, Long[] roleIds);
 
+    /**
+     * 重置用户密码接口
+     *
+     * @param sysUser
+     * @return Result
+     */
     Result resetPassword(SysUser sysUser);
 
+    /**
+     * 更新当前用户密码接口
+     * 第一个参数为当前用户实体类
+     * 第二个参数为密码Dto实体类
+     *
+     * @param sysUser
+     * @param passwordDto
+     * @return Result
+     */
     Result updatePassword(SysUser sysUser, PasswordDto passwordDto);
 }

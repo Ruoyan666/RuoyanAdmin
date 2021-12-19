@@ -64,14 +64,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         return getOne(new QueryWrapper<SysUser>().eq("username", username));
     }
 
-
-    /**
-     * 根据指定用户Id获取用户所有权限信息，并添加到字符串
-     * 返回权限字符串
-     *
-     * @param userId
-     * @return String
-     */
     @Override
     public String getUserAuthorityInfo(Long userId)
     {
@@ -79,11 +71,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         //权限字符串，存放用户角色编码和菜单操作编码
         String authority = "";
+        //redis中得到权限Key
+        String authorityKey = "GrantedAuthority:";
 
         //若redis缓存中存有权限数据，则直接取出权限数据即可
-        if(redisUtil.hasKey("GrantedAuthority:" + sysUser.getUsername()))
+        if(redisUtil.hasKey(authorityKey + sysUser.getUsername()))
         {
-            authority = (String) redisUtil.get("GrantedAuthority:" + sysUser.getUsername());
+            authority = (String) redisUtil.get(authorityKey + sysUser.getUsername());
         }
         else
         {
@@ -112,7 +106,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
                 authority += authority.concat(menuPerms);
             }
 
-            redisUtil.set("GrantedAuthority:" + sysUser.getUsername(), authority, 60 * 60);
+            redisUtil.set(authorityKey + sysUser.getUsername(), authority, 60 * 60);
 
             System.out.println(authority);
         }
@@ -120,11 +114,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         return authority;
     }
 
-    /**
-     * 根据用户名清除redis中用户权限信息
-     *
-     * @param username
-     */
     @Override
     public void clearUserAuthorityInfo(String username)
     {
@@ -168,6 +157,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public Result saveUser(SysUser sysUser)
     {
         sysUser.setCreated(LocalDateTime.now());
@@ -188,7 +178,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         sysUserRole.setUserId(sysUser.getId());
         sysUserRoleService.save(sysUserRole);
 
-        return null;
+        return Result.success(sysUser);
     }
 
     @Override
