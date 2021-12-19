@@ -6,22 +6,22 @@ import com.ruoyan.commom.lang.Const;
 import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysRole;
 import com.ruoyan.entity.SysRoleMenu;
-import com.ruoyan.entity.SysUserRole;
+import com.ruoyan.utils.RuoyanUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+
 
 /**
  * @Package: com.ruoyan.controller
@@ -35,7 +35,19 @@ import java.util.stream.Collectors;
 @RequestMapping("/sys/role")
 public class SysRoleController extends BaseController
 {
+    /**
+     * 当前类名
+     */
     private final String className = this.getClass().getName();
+
+    /**
+     * 方法名
+     */
+    private String functionName;
+
+    @Autowired
+    RuoyanUtil ruoyanUtil;
+
 
     /**
      * 根据指定角色Id获取角色信息
@@ -70,7 +82,7 @@ public class SysRoleController extends BaseController
     @PreAuthorize("hasAuthority('sys:role:manage')")
     @GetMapping("/list")
     @ApiImplicitParam(value = "角色名(可为空)", name = "roleName", dataTypeClass = String.class)
-    public Result list( String roleName)
+    public Result list(String roleName)
     {
         Page<SysRole> sysRolePageData = sysRoleService.page(getPage(),
                 new QueryWrapper<SysRole>().like(StringUtils.isNotBlank(roleName), "name", roleName));
@@ -108,26 +120,14 @@ public class SysRoleController extends BaseController
     @ApiOperation(value = "更新角色项信息接口")
     @PreAuthorize("hasAuthority('sys:role:update')")
     @PostMapping("/update")
-    @Transactional
     public Result update(@ApiParam(value = "需更新实体类信息") @Validated @RequestBody SysRole sysRole)
     {
         SysRole authRole = sysRoleService.getById(sysRole);
 
-        if("admin".equals(authRole.getCode()))
-        {
-            String funtionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        ruoyanUtil.checkSuperAdmin(authRole.getCode(), this.className, this.functionName);
 
-            return sysRoleService.superAdminCheck(this.className, funtionName);
-        }
-
-        sysRole.setUpdated(LocalDateTime.now());
-
-        sysRoleService.updateById(sysRole);
-
-        //清除redis中与该角色所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByRoleId(sysRole.getId());
-
-        return Result.success(sysRole);
+        return sysRoleService.updateByTransactional(sysRole);
     }
 
     /**
@@ -142,34 +142,18 @@ public class SysRoleController extends BaseController
     @ApiOperation(value = "删除角色项接口（可批量删除）")
     @PreAuthorize("hasAuthority('sys:role:delete')")
     @PostMapping("/delete")
-    @Transactional
     public Result delete(@ApiParam(value = "角色Id数组") @RequestBody Long[] roleIds)
     {
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+
         for (Long roleId : roleIds)
         {
             SysRole authRole = sysRoleService.getById(roleId);
 
-            if("admin".equals(authRole.getCode()))
-            {
-                String funtionName = Thread.currentThread().getStackTrace()[1].getMethodName();
-
-                return sysRoleService.superAdminCheck(this.className, funtionName);
-            }
+            ruoyanUtil.checkSuperAdmin(authRole.getCode(), this.className, this.functionName);
         }
 
-        sysRoleService.removeByIds(Arrays.asList(roleIds));
-
-        //同步删除中间表数据
-        sysUserRoleService.remove(new QueryWrapper<SysUserRole>().in("role_id", roleIds));
-        sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().in("role_id", roleIds));
-
-        //清除redis中与该角色所有相关的权限缓存
-        for (Long roleId : roleIds)
-        {
-            sysUserService.clearUserAuthorityInfoByRoleId(roleId);
-        }
-
-        return Result.success("删除成功");
+        return sysRoleService.deleteByTransactional(roleIds);
     }
 
     /**
@@ -183,36 +167,14 @@ public class SysRoleController extends BaseController
     @ApiOperation(value = "修改角色权限信息接口")
     @PreAuthorize("hasAuthority('sys:role:perm')")
     @PostMapping("/perm/{roleId}")
-    @Transactional
     public Result perm(@ApiParam(value = "角色Id") @PathVariable(name = "roleId") Long roleId, @ApiParam(value = "与当前角色所关联的菜单Id数组") @RequestBody Long[] menuIds)
     {
         //针对超级管理员角色本身设置无法修改权限操作
         SysRole authRole = sysRoleService.getById(roleId);
-        if("admin".equals(authRole.getCode()))
-        {
-            String funtionName = Thread.currentThread().getStackTrace()[1].getMethodName();
 
-            return sysRoleService.superAdminCheck(this.className, funtionName);
-        }
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+        ruoyanUtil.checkSuperAdmin(authRole.getCode(), this.className, this.functionName);
 
-        List<SysRoleMenu> sysRoleMenuList = new ArrayList<>();
-
-        for (Long menuId : menuIds)
-        {
-            SysRoleMenu sysRoleMenu = new SysRoleMenu();
-            sysRoleMenu.setMenuId(menuId);
-            sysRoleMenu.setRoleId(roleId);
-
-            sysRoleMenuList.add(sysRoleMenu);
-        }
-
-        //先将原来的记录删除，再将新数据保存进去
-        sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().eq("role_id", roleId));
-        sysRoleMenuService.saveBatch(sysRoleMenuList);
-
-        //清除redis中与该角色所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByRoleId(roleId);
-
-        return Result.success(menuIds);
+        return sysRoleService.updatePermissions(roleId, menuIds);
     }
 }

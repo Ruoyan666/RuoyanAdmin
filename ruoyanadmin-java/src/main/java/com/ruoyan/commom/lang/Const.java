@@ -38,4 +38,14 @@ public class Const
      * 初始化普通用户身份码
      */
     public final static String DEFAULT_ROLENAME = "普通用户";
+
+    public final static String ADMIN_CODE = "admin";
+
+    public final static String UPDATE = "update";
+
+    public final static String DELETE = "delete";
+
+    public final static String PERM = "perm";
+
+    public final static String ROLEPERM = "rolePerm";
 }

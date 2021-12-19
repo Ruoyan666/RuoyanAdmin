@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ruoyan.entity.SysUserRole;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 /**
  * @Package: com.ruoyan.mapper
  * @ClassName: SysUserRoleMapper
@@ -14,4 +16,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SysUserRoleMapper extends BaseMapper<SysUserRole>
 {
+    List<SysUserRole> getUserRoleInfoByUserId(Long userId);
 }

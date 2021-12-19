@@ -106,11 +106,7 @@ public class SysMenuController extends BaseController
     @PostMapping("/save")
     public Result save(@ApiParam(value = "需新增实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
-        sysMenu.setCreated(LocalDateTime.now());
-
-        sysMenuService.save(sysMenu);
-
-        return Result.success(sysMenu);
+        return sysMenuService.saveByTransactional(sysMenu);
     }
 
     /**
@@ -122,77 +118,14 @@ public class SysMenuController extends BaseController
     @ApiOperation(value = "更新菜单项信息接口")
     @PreAuthorize("hasAuthority('sys:menu:update')")
     @PostMapping("/update")
-    @Transactional
     public Result update(@ApiParam(value = "被更新实体类信息") @Validated @RequestBody SysMenu sysMenu)
     {
         //所有菜单项的树结构列表
         List<SysMenu> sysMenuList = sysMenuService.treeList();
 
-        sysMenu.setUpdated(LocalDateTime.now());
-        sysMenuService.updateById(sysMenu);
+        Result result = sysMenuService.updateByTransactional(sysMenu, sysMenuList);
 
-        long start = System.currentTimeMillis();
-
-        //级联更新菜单状态，因为是三级结构，因此需要遍历比较查询出更新的菜单项是否为顶级菜单
-        //若为顶级菜单，则直接更新顶级菜单和顶级菜单下的所有子菜单项状态即可
-        //若不为顶级菜单，则先找出属于该菜单下的所有子菜单项，最后更新该菜单和菜单下所有子菜单项状态
-        if(sysMenu.getParentId() == 0L)
-        {
-            updateMenuChildrenStatus(sysMenuList, sysMenu);
-        }
-        else
-        {
-            //遍历整个树结构，找到当前菜单项结点
-            for (SysMenu menu : sysMenuList)
-            {
-                for (SysMenu child : menu.getChildren())
-                {
-                    //若当前菜单项存在子菜单项，则更新子菜单项状态
-                    if(child.getId().equals(sysMenu.getId()))
-                    {
-                        updateMenuChildrenStatus(menu.getChildren(), sysMenu);
-                    }
-                }
-            }
-
-        }
-
-        long end = System.currentTimeMillis();
-
-        System.out.println("业务代码运行时间:" + (end - start) + "ms");
-
-        //清除redis中与该菜单所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByMenuId(sysMenu.getId());
-
-        return Result.success(sysMenu);
-    }
-
-
-    /**
-     * 该方法为更新某菜单项下所有子菜单项状态信息
-     * 第一个参数为子菜单项列表
-     * 第二个参数为子菜单项列表的父菜单项
-     *
-     * @param sysMenuList
-     * @param sysMenu
-     */
-    public void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu)
-    {
-        for (SysMenu menu : sysMenuList)
-        {
-            if(menu.getId().equals(sysMenu.getId()) && menu.getChildren().size() > 0)
-            {
-                for (SysMenu child : menu.getChildren())
-                {
-                    child.setUpdated(LocalDateTime.now());
-                    child.setStatu(sysMenu.getStatu());
-                    sysMenuService.updateById(child);
-
-                    updateMenuChildrenStatus(menu.getChildren(), child);
-                }
-            }
-        }
-
+        return result;
     }
 
     /**
@@ -204,23 +137,11 @@ public class SysMenuController extends BaseController
     @ApiOperation(value = "根据指定菜单Id删除菜单项接口")
     @PreAuthorize("hasAuthority('sys:menu:delete')")
     @PostMapping("/delete/{id}")
-    @Transactional
     public Result delete(@ApiParam(value = "菜单Id") @PathVariable(name = "id") Long menuId)
     {
-        int count = sysMenuService.count(new QueryWrapper<SysMenu>().eq("parent_id", menuId));
-        if(count > 0)
-        {
-            return Result.fail("当前菜单项下还存在有子菜单项，无法删除");
-        }
+        Result result = sysMenuService.deleteByTransactional(menuId);
 
-        //清除redis中与该菜单所有相关的权限缓存
-        sysUserService.clearUserAuthorityInfoByMenuId(menuId);
-
-        sysMenuService.removeById(menuId);
-        //同步删除中间关联表信息
-        sysRoleMenuService.remove(new QueryWrapper<SysRoleMenu>().eq("menu_id", menuId));
-
-        return Result.success("操作成功");
+        return result;
     }
 
 }

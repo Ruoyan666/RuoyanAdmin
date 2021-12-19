@@ -12,16 +12,7 @@ const request = axios.create({
 })
 
 request.interceptors.request.use(config =>{
-
-    let token = localStorage.getItem("token");
-
-    if (!token)
-    {
-        token = sessionStorage.getItem("token");
-    }
-
-    config.headers['Authorization'] = token;
-
+    config.headers['Authorization'] = localStorage.getItem("token");
 
     return config;
 } )

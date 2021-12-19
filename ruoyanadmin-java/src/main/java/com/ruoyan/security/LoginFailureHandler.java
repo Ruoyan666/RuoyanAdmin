@@ -27,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 public class LoginFailureHandler implements AuthenticationFailureHandler
 {
     @Override
-    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException, ServletException
+    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException e) throws IOException
     {
         response.setContentType("application/json;charset=UTF-8");
         ServletOutputStream outputStream = response.getOutputStream();
@@ -38,7 +38,7 @@ public class LoginFailureHandler implements AuthenticationFailureHandler
         {
             result = Result.fail(e.getMessage());
         }
-        else if(e.getClass() == AccountBannedException.class)
+        else if(e.getCause().getClass() == AccountBannedException.class)
         {
             result = Result.fail(e.getMessage());
         }

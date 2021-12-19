@@ -9,7 +9,9 @@ import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysRole;
 import com.ruoyan.entity.SysUser;
 import com.ruoyan.entity.SysUserRole;
+import com.ruoyan.mapper.SysUserRoleMapper;
 import com.ruoyan.security.JwtLogoutSuccessHandler;
+import com.ruoyan.utils.RuoyanUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
@@ -42,13 +44,24 @@ import java.util.List;
 @RequestMapping("/sys/user")
 public class SysUserController extends BaseController
 {
+    /**
+     * 当前类名
+     */
     private final String className = this.getClass().getName();
+
+    /**
+     *
+     */
+    private String functionName;
 
     @Autowired
     BCryptPasswordEncoder bCryptPasswordEncoder;
 
     @Autowired
     JwtLogoutSuccessHandler jwtLogoutSuccessHandler;
+
+    @Autowired
+    RuoyanUtil ruoyanUtil;
 
     /**
      * 根据用户Id获取用户信息
@@ -103,28 +116,9 @@ public class SysUserController extends BaseController
     @ApiOperation(value = "新增用户项接口")
     @PreAuthorize("hasAuthority('sys:user:save')")
     @PostMapping("/save")
-    @Transactional
     public Result save(@ApiParam(value = "需新增实体类信息") @Validated @RequestBody SysUser sysUser)
     {
-        sysUser.setCreated(LocalDateTime.now());
-
-        //根据默认普通用户身份码查询出角色信息
-        SysUserRole sysUserRole = new SysUserRole();
-        SysRole sysRole = sysRoleService.getOne(new QueryWrapper<SysRole>().eq("name", Const.DEFAULT_ROLENAME));
-
-        //设置默认用户状态、密码、头像
-        sysUser.setStatu(Const.STATUS_ON);
-        sysUser.setPassword(bCryptPasswordEncoder.encode(Const.DEFAULT_PASSWORD));
-        sysUser.setAvatar(Const.DEFAULT_AVATAR);
-
-        sysUserService.save(sysUser);
-
-        //设置新建用户默认为普通用户
-        sysUserRole.setRoleId(sysRole.getId());
-        sysUserRole.setUserId(sysUser.getId());
-        sysUserRoleService.save(sysUserRole);
-
-        return Result.success(sysUser);
+        return sysUserService.saveUser(sysUser);
     }
 
     /**
@@ -140,17 +134,13 @@ public class SysUserController extends BaseController
     {
         List<SysUserRole> userRoleList = sysUserRoleService.list(
                 new QueryWrapper<SysUserRole>().eq("user_id", sysUser.getId()));
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
 
         for (SysUserRole sysUserRole : userRoleList)
         {
             SysRole sysRole = sysRoleService.getById(sysUserRole.getRoleId());
 
-            if("admin".equals(sysRole.getCode()))
-            {
-                String functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
-
-                return sysRoleService.superAdminCheck(this.className, functionName);
-            }
+            ruoyanUtil.checkSuperAdmin(sysRole.getCode(), this.className, this.functionName);
         }
 
         sysUser.setUpdated(LocalDateTime.now());
@@ -175,6 +165,8 @@ public class SysUserController extends BaseController
     @Transactional
     public Result delete(@ApiParam(value = "用户Id数组") @RequestBody Long[] userIds)
     {
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+
         for (Long userId : userIds)
         {
             List<SysRole> sysRoleList = sysRoleService.listRolesByUserId(userId);
@@ -182,21 +174,11 @@ public class SysUserController extends BaseController
             for (SysRole sysRole : sysRoleList)
             {
                 //若当前用户拥有超级管理员角色信息，则该用户不可被删除
-                if("admin".equals(sysRole.getCode()))
-                {
-                    String functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
-
-                    return sysRoleService.superAdminCheck(className, functionName);
-                }
+                ruoyanUtil.checkSuperAdmin(sysRole.getCode(), this.className, this.functionName);
             }
         }
 
-        sysUserService.removeByIds(Arrays.asList(userIds));
-
-        //删除中间表信息
-        sysUserRoleService.remove(new QueryWrapper<SysUserRole>().in("user_id", userIds));
-
-        return Result.success("删除成功");
+        return sysUserService.deleteByTransactional(userIds);
     }
 
     /**
@@ -209,44 +191,19 @@ public class SysUserController extends BaseController
     @ApiOperation(value = "更新用户角色信息接口")
     @PreAuthorize("hasAuthority('sys:user:role')")
     @PostMapping("/role/{userId}")
-    @Transactional
     public Result rolePerm(@ApiParam(value = "用户Id") @PathVariable("userId") Long userId, @ApiParam(value = "与当前用户相关联的角色Id数组") @RequestBody Long[] roleIds)
     {
-        for (Long roleId : roleIds)
+        List<SysUserRole> userRoleList = sysUserRoleService.getUserRoleInfoByUserId(userId);
+        this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
+
+        for (SysUserRole sysUserRole : userRoleList)
         {
-            SysRole sysRole = sysRoleService.getById(roleId);
+            SysRole sysRole = sysRoleService.getById(sysUserRole.getRoleId());
 
-            if("admin".equals(sysRole.getCode()))
-            {
-                String functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
-
-                return sysRoleService.superAdminCheck(this.className, functionName);
-            }
+            ruoyanUtil.checkSuperAdmin(sysRole.getCode(), this.className, this.functionName);
         }
 
-        //List用于存储用户关联的角色数组信息
-        List<SysUserRole> sysUserRoleList = new ArrayList<>();
-
-        for (Long roleId : roleIds)
-        {
-            //将用户角色相关联表信息更新，将用户Id和角色Id添加到用户角色实体类中
-            SysUserRole sysUserRole = new SysUserRole();
-            sysUserRole.setRoleId(roleId);
-            sysUserRole.setUserId(userId);
-
-            sysUserRoleList.add(sysUserRole);
-        }
-
-        //先删除中间表当前用户的角色数据
-        sysUserRoleService.remove(new QueryWrapper<SysUserRole>().eq("user_id", userId));
-
-        //再将新更新的角色信息添加到中间表
-        sysUserRoleService.saveBatch(sysUserRoleList);
-
-        //将用户表中的旧用户数据缓存清除
-        sysUserService.clearUserAuthorityInfo(sysUserService.getById(userId).getUsername());
-
-        return Result.success(sysUserRoleList);
+        return sysUserService.updatePermissions(userId, roleIds);
     }
 
     /**
@@ -262,13 +219,7 @@ public class SysUserController extends BaseController
     {
         SysUser sysUser = sysUserService.getById(userId);
 
-        //设置默认加密密码和更新日期
-        sysUser.setPassword(bCryptPasswordEncoder.encode(Const.DEFAULT_PASSWORD));
-        sysUser.setUpdated(LocalDateTime.now());
-
-        sysUserService.updateById(sysUser);
-
-        return Result.success("OK");
+        return sysUserService.resetPassword(sysUser);
     }
 
     @ApiOperation(value = "用户修改密码接口")
@@ -276,6 +227,7 @@ public class SysUserController extends BaseController
     public Result updatePassword(@ApiParam(value = "密码DTO类") @Validated @RequestBody PasswordDto passwordDto, @ApiParam(value = "当前用户名") Principal principal)
     {
         SysUser sysUser = sysUserService.getByUsername(principal.getName());
+        Assert.notNull(sysUser, "找不到该用户");
 
         boolean matches = bCryptPasswordEncoder.matches(passwordDto.getCurrentPassword(), sysUser.getPassword());
         if(!matches)
@@ -283,12 +235,7 @@ public class SysUserController extends BaseController
             return Result.fail("旧密码输入错误");
         }
 
-        sysUser.setPassword(bCryptPasswordEncoder.encode(passwordDto.getNewPassword()));
-        sysUser.setUpdated(LocalDateTime.now());
-
-        sysUserService.updateById(sysUser);
-
-        return Result.success("OK");
+        return sysUserService.updatePassword(sysUser, passwordDto);
     }
 
 }

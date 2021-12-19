@@ -1,6 +1,5 @@
 package com.ruoyan.commom.exception;
 
-import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.AuthenticationException;
 
 /**
@@ -10,7 +9,7 @@ import org.springframework.security.core.AuthenticationException;
  * @CreateTime: 2021/12/10 8:25
  * @Description: 账户禁用异常
  */
-public class AccountBannedException extends InternalAuthenticationServiceException
+public class AccountBannedException extends AuthenticationException
 {
     public AccountBannedException(String msg)
     {
