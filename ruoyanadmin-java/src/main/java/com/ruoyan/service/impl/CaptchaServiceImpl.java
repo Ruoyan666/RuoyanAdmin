@@ -21,7 +21,7 @@ import java.io.IOException;
  * @ClassName: CaptchaServiceImpl
  * @Author: ruoyan1998
  * @CreateTime: 2021/12/13 8:33
- * @Description:
+ * @Description: 验证码服务类接口实现类
  */
 @Service
 public class CaptchaServiceImpl implements CaptchaService

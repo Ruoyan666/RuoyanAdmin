@@ -9,7 +9,7 @@ import java.io.IOException;
  * @ClassName: CaptchaService
  * @Author: ruoyan1998
  * @CreateTime: 2021/12/13 8:33
- * @Description:
+ * @Description: 验证码服务层
  */
 public interface CaptchaService
 {
@@ -18,5 +18,5 @@ public interface CaptchaService
      * @return Result
      * @throws IOException 抛出异常程序继续执行
      */
-    public Result getCaptcha() throws IOException;
+    Result getCaptcha() throws IOException;
 }
