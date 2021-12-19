@@ -3,6 +3,7 @@ package com.ruoyan.security;
 import com.ruoyan.commom.exception.AccountBannedException;
 import com.ruoyan.entity.SysUser;
 import com.ruoyan.service.SysUserService;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,16 +29,13 @@ public class UserDetailsServiceImpl implements UserDetailsService
     SysUserService sysUserService;
 
 
+    @SneakyThrows
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException
     {
         SysUser sysUser = sysUserService.getByUsername(username);
 
-        if(sysUser.getStatu() == 0)
-        {
-            throw new AccountBannedException("账户已被禁用");
-        }
-        else if(sysUser == null)
+        if(sysUser == null)
         {
             throw new UsernameNotFoundException("用户名或密码不正确");
         }
