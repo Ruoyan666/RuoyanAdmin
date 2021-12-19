@@ -56,6 +56,8 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper,SysRole> imple
     @Override
     public void superAdminCheck(String className, String functionName)
     {
+        //判断属于传入的类名属于哪个控制层类名
+        //接着判断方法名，根据方法名抛出不同的异常信息
         if("com.ruoyan.controller.SysRoleController".equals(className))
         {
             if(Const.UPDATE.equals(functionName))
@@ -125,8 +127,10 @@ public class SysRoleServiceImpl extends ServiceImpl<SysRoleMapper,SysRole> imple
     @Transactional(rollbackFor = Exception.class)
     public Result updatePermissions(Long roleId, Long[] menuIds)
     {
+        //新建一个泛型为角色菜单实体类的列表，用于存储需要更新的角色菜单信息，并用于批处理
         List<SysRoleMenu> sysRoleMenuList = new ArrayList<>();
 
+        //遍历所有的菜单项Id，将新建的角色菜单实体类属性进行设置之后，添加进列表中
         for (Long menuId : menuIds)
         {
             SysRoleMenu sysRoleMenu = new SysRoleMenu();

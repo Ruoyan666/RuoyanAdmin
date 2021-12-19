@@ -1,11 +1,9 @@
 package com.ruoyan.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysRole;
 
-import java.sql.ResultSet;
 import java.util.List;
 
 /**
@@ -35,9 +33,30 @@ public interface SysRoleService extends IService<SysRole>
      */
     void superAdminCheck(String className,String funtionName);
 
+    /**
+     * 利用事务对角色项进行更新
+     *
+     * @param sysRole
+     * @return Result
+     */
     Result updateByTransactional(SysRole sysRole);
 
+    /**
+     * 利用事务对角色项进行删除（可批量删除）
+     *
+     * @param roleIds
+     * @return Result
+     */
     Result deleteByTransactional(Long[] roleIds);
 
+    /**
+     * 更新角色项下的菜单项权限信息
+     * 第一个参数为需修改的角色项Id
+     * 第二个参数为该角色项下的菜单项Id数组
+     * 
+     * @param roleId
+     * @param menuIds
+     * @return Result
+     */
     Result updatePermissions(Long roleId, Long[] menuIds);
 }
