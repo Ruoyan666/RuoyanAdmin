@@ -39,13 +39,28 @@ public class Const
      */
     public final static String DEFAULT_ROLENAME = "普通用户";
 
+    /**
+     * 超级管理员身份状态码
+     */
     public final static String ADMIN_CODE = "admin";
 
+    /**
+     * 更新方法通用名
+     */
     public final static String UPDATE = "update";
 
+    /**
+     * 删除方法通用名
+     */
     public final static String DELETE = "delete";
 
+    /**
+     * 操纵角色下菜单项权限方法通用名
+     */
     public final static String PERM = "perm";
 
+    /**
+     * 操作用户下角色项权限方法通用名
+     */
     public final static String ROLEPERM = "rolePerm";
 }
