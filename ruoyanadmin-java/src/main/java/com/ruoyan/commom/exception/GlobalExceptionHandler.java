@@ -80,6 +80,12 @@ public class GlobalExceptionHandler
         return Result.fail(objectError.getDefaultMessage());
     }
 
+    /**
+     * 权限不足异常
+     *
+     * @param e
+     * @return Result
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = AccessDeniedException.class)
     public Result handlerResult(AccessDeniedException e)
@@ -89,6 +95,12 @@ public class GlobalExceptionHandler
         return Result.fail("权限不足，不允许访问");
     }
 
+    /**
+     * 账户禁用异常
+     *
+     * @param e
+     * @return Result
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = AccountBannedException.class)
     public Result handlerResult(AccountBannedException e)
@@ -98,6 +110,12 @@ public class GlobalExceptionHandler
         return Result.fail(e.getMessage());
     }
 
+    /**
+     * 超级管理员角色操作异常
+     *
+     * @param e
+     * @return Result
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(value = CheckSuperAdminException.class)
     public Result handlerResult(CheckSuperAdminException e)
