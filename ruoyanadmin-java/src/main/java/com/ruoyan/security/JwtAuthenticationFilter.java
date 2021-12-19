@@ -88,13 +88,4 @@ public class JwtAuthenticationFilter extends BasicAuthenticationFilter
         chain.doFilter(request, response);
     }
 
-    /*public void checkAccountStatus(Integer userStatus)
-    {
-        Integer bannedStatus = 0;
-
-        if(bannedStatus.equals(userStatus))
-        {
-            throw new AccountBannedException("账户已被禁用，无法登录");
-        }
-    }*/
 }
