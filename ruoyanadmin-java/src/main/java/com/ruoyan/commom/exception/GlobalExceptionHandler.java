@@ -10,7 +10,6 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -96,6 +95,15 @@ public class GlobalExceptionHandler
     {
 
         log.error("账户禁用异常：---------{}", e.getMessage());
+        return Result.fail(e.getMessage());
+    }
+
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(value = CheckSuperAdminException.class)
+    public Result handlerResult(CheckSuperAdminException e)
+    {
+
+        log.error("超级管理员角色操作异常：---------{}", e.getMessage());
         return Result.fail(e.getMessage());
     }
 }
