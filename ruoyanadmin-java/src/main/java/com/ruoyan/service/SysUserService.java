@@ -1,7 +1,9 @@
 package com.ruoyan.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ruoyan.commom.dto.PasswordDto;
 import com.ruoyan.commom.dto.SysUserDto;
+import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysUser;
 
 /**
@@ -51,4 +53,14 @@ public interface SysUserService extends IService<SysUser>
     void clearUserAuthorityInfoByMenuId(Long menuId);
 
     SysUserDto getUserInfo(SysUser sysUser);
+
+    Result saveUser(SysUser sysUser);
+
+    Result deleteByTransactional(Long[] userIds);
+
+    Result updatePermissions(Long userId, Long[] roleIds);
+
+    Result resetPassword(SysUser sysUser);
+
+    Result updatePassword(SysUser sysUser, PasswordDto passwordDto);
 }

@@ -2,20 +2,30 @@ package com.ruoyan.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ruoyan.commom.dto.PasswordDto;
 import com.ruoyan.commom.dto.SysUserDto;
+import com.ruoyan.commom.lang.Const;
+import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysMenu;
 import com.ruoyan.entity.SysRole;
 import com.ruoyan.entity.SysUser;
+import com.ruoyan.entity.SysUserRole;
 import com.ruoyan.mapper.SysUserMapper;
 import com.ruoyan.service.SysMenuService;
 import com.ruoyan.service.SysRoleService;
+import com.ruoyan.service.SysUserRoleService;
 import com.ruoyan.service.SysUserService;
 import com.ruoyan.utils.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.management.relation.Role;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,7 +49,13 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     SysMenuService sysMenuService;
 
     @Autowired
+    SysUserRoleService sysUserRoleService;
+
+    @Autowired
     RedisUtil redisUtil;
+
+    @Autowired
+    BCryptPasswordEncoder bCryptPasswordEncoder;
 
 
     @Override
@@ -150,4 +166,93 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         return sysUserDto;
     }
+
+    @Override
+    public Result saveUser(SysUser sysUser)
+    {
+        sysUser.setCreated(LocalDateTime.now());
+
+        //根据默认普通用户身份码查询出角色信息
+        SysUserRole sysUserRole = new SysUserRole();
+        SysRole sysRole = sysRoleService.getOne(new QueryWrapper<SysRole>().eq("name", Const.DEFAULT_ROLENAME));
+
+        //设置默认用户状态、密码、头像
+        sysUser.setStatu(Const.STATUS_ON);
+        sysUser.setPassword(bCryptPasswordEncoder.encode(Const.DEFAULT_PASSWORD));
+        sysUser.setAvatar(Const.DEFAULT_AVATAR);
+
+        this.save(sysUser);
+
+        //设置新建用户默认为普通用户
+        sysUserRole.setRoleId(sysRole.getId());
+        sysUserRole.setUserId(sysUser.getId());
+        sysUserRoleService.save(sysUserRole);
+
+        return null;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result deleteByTransactional(Long[] userIds)
+    {
+        this.removeByIds(Arrays.asList(userIds));
+
+        //删除中间表信息
+        sysUserRoleService.remove(new QueryWrapper<SysUserRole>().in("user_id", userIds));
+
+        return Result.success("删除成功");
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result updatePermissions(Long userId, Long[] roleIds)
+    {
+        //List用于存储用户关联的角色数组信息
+        List<SysUserRole> sysUserRoleList = new ArrayList<>();
+
+        for (Long roleId : roleIds)
+        {
+            //将用户角色相关联表信息更新，将用户Id和角色Id添加到用户角色实体类中
+            SysUserRole sysUserRole = new SysUserRole();
+            sysUserRole.setRoleId(roleId);
+            sysUserRole.setUserId(userId);
+
+            sysUserRoleList.add(sysUserRole);
+        }
+
+        //先删除中间表当前用户的角色数据
+        sysUserRoleService.remove(new QueryWrapper<SysUserRole>().eq("user_id", userId));
+
+        //再将新更新的角色信息添加到中间表
+        sysUserRoleService.saveBatch(sysUserRoleList);
+
+        //将用户表中的旧用户数据缓存清除
+        this.clearUserAuthorityInfo(this.getById(userId).getUsername());
+
+        return Result.success(sysUserRoleList);
+    }
+
+    @Override
+    public Result resetPassword(SysUser sysUser)
+    {
+        //设置默认加密密码和更新日期
+        sysUser.setPassword(bCryptPasswordEncoder.encode(Const.DEFAULT_PASSWORD));
+        sysUser.setUpdated(LocalDateTime.now());
+
+        this.updateById(sysUser);
+
+        return Result.success("重置密码成功");
+    }
+
+    @Override
+    public Result updatePassword(SysUser sysUser, PasswordDto passwordDto)
+    {
+        sysUser.setPassword(bCryptPasswordEncoder.encode(passwordDto.getNewPassword()));
+        sysUser.setUpdated(LocalDateTime.now());
+
+        this.updateById(sysUser);
+
+        return Result.success("更新密码成功");
+    }
+
 }
