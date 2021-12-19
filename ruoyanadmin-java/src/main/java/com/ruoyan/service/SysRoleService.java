@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.ruoyan.commom.lang.Result;
 import com.ruoyan.entity.SysRole;
 
+import java.sql.ResultSet;
 import java.util.List;
 
 /**
@@ -32,5 +33,11 @@ public interface SysRoleService extends IService<SysRole>
      * @param funtionName
      * @return Result
      */
-    public Result superAdminCheck(String className,String funtionName);
+    void superAdminCheck(String className,String funtionName);
+
+    Result updateByTransactional(SysRole sysRole);
+
+    Result deleteByTransactional(Long[] roleIds);
+
+    Result updatePermissions(Long roleId, Long[] menuIds);
 }
