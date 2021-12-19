@@ -59,7 +59,6 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
         List<SysMenu> menuTree = buildMenuTree(sysMenuList);
 
         //将树状结构转换成DTO
-
         return convert(menuTree);
     }
 
@@ -73,6 +72,12 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
         return buildMenuTree(sysMenuList);
     }
 
+    /**
+     * 将菜单项树结构转换成菜单项Dto结构
+     *
+     * @param menuTree
+     * @return List<SysMenuDto>
+     */
     private List<SysMenuDto> convert(List<SysMenu> menuTree)
     {
         List<SysMenuDto> menuDtoList = new ArrayList<>();
@@ -214,8 +219,7 @@ public class SysMenuServiceImpl extends ServiceImpl<SysMenuMapper,SysMenu> imple
      * @param sysMenuList
      * @param sysMenu
      */
-    @Override
-    public void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu)
+    private void updateMenuChildrenStatus(List<SysMenu> sysMenuList, SysMenu sysMenu)
     {
         for (SysMenu menu : sysMenuList)
         {
