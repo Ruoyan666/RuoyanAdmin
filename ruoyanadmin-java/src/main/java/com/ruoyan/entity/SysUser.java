@@ -66,6 +66,7 @@ public class SysUser extends BaseEntity
     /**
      * 手机号
      */
+    @JsonIgnore
     private String phone;
 
     /**
