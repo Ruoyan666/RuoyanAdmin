@@ -39,6 +39,11 @@ public class TestController
     @Autowired
     JwtUtil jwtUtil;
 
+    /**
+     * 测试获取用户信息接口
+     *
+     * @return Result
+     */
     @ApiOperation(value = "测试通过权限获取用户信息接口")
     @PreAuthorize("hasRole('admin')")
     @GetMapping("/test")

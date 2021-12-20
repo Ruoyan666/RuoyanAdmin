@@ -50,7 +50,7 @@ public class SysUserController extends BaseController
     private final String className = this.getClass().getName();
 
     /**
-     *
+     * 方法名
      */
     private String functionName;
 
@@ -162,7 +162,6 @@ public class SysUserController extends BaseController
     @ApiOperation(value = "删除用户项信息接口(可批量删除)")
     @PreAuthorize("hasAuthority('sys:user:delete')")
     @PostMapping("/delete")
-    @Transactional
     public Result delete(@ApiParam(value = "用户Id数组") @RequestBody Long[] userIds)
     {
         this.functionName = Thread.currentThread().getStackTrace()[1].getMethodName();
