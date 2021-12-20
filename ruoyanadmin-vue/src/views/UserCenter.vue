@@ -9,7 +9,7 @@
       <el-form-item label="新密码" prop="newPassword">
         <el-input type="password" v-model="passForm.newPassword" autocomplete="off"></el-input>
       </el-form-item>
-      <el-form-item label="确认密码" prop="checkPass">
+      <el-form-item label="确认密码" prop="checkPassword">
         <el-input type="password" v-model="passForm.checkPassword" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item>
@@ -49,7 +49,8 @@ export default {
           { min: 5, max: 12, message: '长度在 5 到 12 个字符', trigger: 'blur' }
         ],
         checkPassword: [
-          { required: true, validator: validatePass, trigger: 'blur' }
+          { required: true, validator: validatePass, trigger: 'blur' },
+          { min: 5, max: 12, message: '长度在 5 到 12 个字符', trigger: 'blur' }
         ],
         currentPassword: [
           { required: true, message: '请输入当前密码', trigger: 'blur' },
